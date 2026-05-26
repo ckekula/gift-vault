@@ -1,0 +1,70 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Nunito", "Inter", ui-sans-serif, system-ui, sans-serif;
+  
+  --color-cream-50: #fdf9f4;
+  --color-cream-100: #f7f0e6;
+  --color-cream-200: #ede0cc;
+
+  --color-rose-soft: #fde8ec;
+  --color-rose-mid: #f4a4b5;
+  --color-rose-deep: #c45a76;
+
+  --color-sage-soft: #e8f5ee;
+  --color-sage-mid: #7ecba0;
+  --color-sage-deep: #2d7a52;
+
+  --color-lavender-soft: #eeeafd;
+  --color-lavender-mid: #a89fe8;
+  --color-lavender-deep: #5a4fbf;
+
+  --color-amber-soft: #fff3e0;
+  --color-amber-mid: #ffb74d;
+  --color-amber-deep: #b45309;
+
+  /* Security accent — distinct from the cozy palette */
+  --color-sec-bg: #e8f4fd;
+  --color-sec-border: #60a5fa;
+  --color-sec-text: #1e40af;
+  --color-sec-icon: #3b82f6;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    background: var(--color-cream-50);
+  }
+  
+  * {
+    box-sizing: border-box;
+  }
+}
+
+@layer utilities {
+  .text-balance { text-wrap: balance; }
+
+  /* Cozy card */
+  .card-cozy {
+    background: white;
+    border-radius: 1.25rem;
+    border: 1.5px solid var(--color-cream-200);
+    padding: 1.5rem;
+  }
+
+  /* Security badge style — clearly distinct */
+  .sec-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--color-sec-bg);
+    border: 1px solid var(--color-sec-border);
+    color: var(--color-sec-text);
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    padding: 2px 8px;
+    text-transform: uppercase;
+  }
+}
