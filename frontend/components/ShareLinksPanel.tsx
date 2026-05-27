@@ -54,7 +54,7 @@ export function ShareLinksPanel({ links }: Props) {
           </div>
           <button
             onClick={() => copy(link.tier, link.url)}
-            className="shrink-0 flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-xl transition-all"
+            className="shrink-0 flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-xl transition-all cursor-pointer"
             style={
               copied === link.tier
                 ? { background: "#e8f5ee", color: "#2d7a52", border: "1px solid #7ecba0" }
@@ -62,7 +62,7 @@ export function ShareLinksPanel({ links }: Props) {
             }
           >
             {copied === link.tier ? <Check size={12} /> : <Copy size={12} />}
-            {copied === link.tier ? "copied!" : "copy"}
+            {copied === link.tier ? "Copied!" : "Copy"}
           </button>
         </div>
       ))}

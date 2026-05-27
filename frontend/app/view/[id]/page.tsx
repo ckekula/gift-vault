@@ -175,9 +175,8 @@ export default function ViewPage() {
         {/* Gifts */}
         {gifts.length === 0 ? (
           <div className="text-center py-16 text-gray-400">
-            <div className="text-5xl mb-3">🎁</div>
-            <p className="font-medium">no gifts to show yet</p>
-            <p className="text-sm mt-1">check back soon!</p>
+            <p className="font-medium">No gifts to show yet</p>
+            <p className="text-sm mt-1">Check back soon!</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -194,9 +193,9 @@ export default function ViewPage() {
         )}
 
         <p className="text-center text-xs text-gray-400 pt-4">
-          made with 🎁{" "}
+          made with GiftVault 🎁{" "}
           <Link href="/" className="text-rose-deep font-semibold hover:underline">
-            make your own GiftVault
+            Make your own!
           </Link>
         </p>
       </main>
