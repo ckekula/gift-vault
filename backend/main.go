@@ -158,7 +158,7 @@ func (d *DB) Update(id string, req UpdateListRequest) (*ListResponse, error) {
 }
 
 func (d *DB) Claim(id string, req ClaimRequest) (*ListResponse, error) {
-	// Read current claim_states, mutate, and write back in a single transaction.
+	// Read current claim_states, mutate, write back — all in a transaction.
 	tx, err := d.db.Begin()
 	if err != nil {
 		return nil, err
@@ -197,12 +197,24 @@ func (d *DB) Claim(id string, req ClaimRequest) (*ListResponse, error) {
 // ── HTTP handlers ─────────────────────────────────────────────────────────────
 
 func cors(next http.Handler) http.Handler {
+	allowed := os.Getenv("ALLOWED_ORIGIN")
+	if allowed == "" {
+		allowed = "*"
+	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
+		origin := r.Header.Get("Origin")
+		if allowed == "*" {
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+		} else if origin == allowed {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+			w.Header().Set("Vary", "Origin")
+		}
 		w.Header().Set("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 		w.Header().Set("Referrer-Policy", "no-referrer")
+		// Respond to preflight immediately — before any routing or redirects
 		if r.Method == http.MethodOptions {
+			w.Header().Set("Access-Control-Max-Age", "86400")
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}
