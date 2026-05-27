@@ -2,23 +2,26 @@
 import { useState, useEffect } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { ShieldCheck, RefreshCw } from "lucide-react";
-import type { Gift, Tier } from "@/lib/crypto";
+import type { Gift, Group } from "@/lib/crypto";
 import { decryptAsViewer } from "@/lib/crypto";
 import { api } from "@/lib/api";
 import { GiftCard } from "@/components/GiftCard";
 import { SecurityBadge } from "@/components/SecurityBadge";
+import { TierBadge } from "@/components/TierBadge";
 import Link from "next/link";
-
+ 
 export default function ViewPage() {
   const { id } = useParams<{ id: string }>();
   const searchParams = useSearchParams();
-  const tier = (searchParams.get("tier") || "all") as Tier;
-
-  const [gifts, setGifts] = useState<Gift[]>([]);
+  const groupId   = searchParams.get("group") ?? "everyone";
+  const groupName = searchParams.get("name")  ?? groupId;
+ 
+  const [gifts, setGifts]             = useState<Gift[]>([]);
+  const [groups, setGroups]           = useState<Group[]>([]);
   const [claimStates, setClaimStates] = useState<Record<string, string>>({});
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [updatedAt, setUpdatedAt] = useState<string>("");
+  const [loading, setLoading]         = useState(true);
+  const [error, setError]             = useState<string | null>(null);
+  const [updatedAt, setUpdatedAt]     = useState("");
 
   const loadList = async () => {
     setLoading(true);
@@ -26,13 +29,12 @@ export default function ViewPage() {
     try {
       const fragment = window.location.hash.slice(1);
       if (!fragment) throw new Error("no key in URL");
-
       const listData = await api.getList(id);
-      const blob = listData.blobs?.[tier];
+      const blob = listData.blobs?.[groupId];
       if (!blob) throw new Error("no data for this access level");
-
-      const decrypted = await decryptAsViewer(fragment, blob);
-      setGifts(decrypted);
+      const { gifts: g, groups: gr } = await decryptAsViewer(fragment, blob);
+      setGifts(g);
+      setGroups(gr);
       setClaimStates(listData.claim_states || {});
       setUpdatedAt(listData.updated_at);
     } catch (err) {
@@ -43,36 +45,7 @@ export default function ViewPage() {
     }
   };
 
-  useEffect(() => {
-    let cancelled = false;
-
-    const run = async () => {
-      setError(null);
-      try {
-        const fragment = window.location.hash.slice(1);
-        if (!fragment) throw new Error("no key in URL");
-
-        const listData = await api.getList(id);
-        const blob = listData.blobs?.[tier];
-        if (!blob) throw new Error("no data for this access level");
-
-        const decrypted = await decryptAsViewer(fragment, blob);
-        if (cancelled) return;
-        setGifts(decrypted);
-        setClaimStates(listData.claim_states || {});
-        setUpdatedAt(listData.updated_at);
-      } catch (err) {
-        if (cancelled) return;
-        console.error(err);
-        setError("couldn't decrypt this list — is the link correct?");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-
-    run();
-    return () => { cancelled = true; };
-  }, [id, tier]);
+  useEffect(() => { loadList(); }, [id, groupId]);
 
   const handleClaim = async (giftId: string, claim: boolean) => {
     try {
@@ -83,16 +56,9 @@ export default function ViewPage() {
     }
   };
 
-  const TIER_LABELS: Record<string, string> = {
-    family: "family", friends: "friends", santa: "secret santa", all: "everyone",
-  };
-  const TIER_COLORS: Record<string, { accent: string; bg: string }> = {
-    family:  { accent: "#c45a76", bg: "#fde8ec" },
-    friends: { accent: "#5a4fbf", bg: "#eeeafd" },
-    santa:   { accent: "#b45309", bg: "#fff3e0" },
-    all:     { accent: "#2d7a52", bg: "#e8f5ee" },
-  };
-  const tc = TIER_COLORS[tier] ?? TIER_COLORS["all"];
+  // Find the color for the current group from the decrypted group list
+  const currentGroup = groups.find((g) => g.id === groupId);
+  const groupColor = currentGroup?.color ?? "#2d7a52";
 
   if (loading) {
     return (
@@ -131,14 +97,9 @@ export default function ViewPage() {
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
           <span className="text-2xl">🎁</span>
           <div className="flex-1">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <h1 className="font-extrabold text-gray-900">GiftVault</h1>
-              <span
-                className="text-xs font-bold px-2 py-0.5 rounded-full"
-                style={{ background: tc.bg, color: tc.accent }}
-              >
-                {TIER_LABELS[tier] ?? tier} view
-              </span>
+              <TierBadge name={groupName} color={groupColor} />
             </div>
             {updatedAt && (
               <p className="text-[11px] text-gray-400">
@@ -184,6 +145,7 @@ export default function ViewPage() {
               <GiftCard
                 key={gift.id}
                 gift={gift}
+                groups={groups}
                 claimed={claimStates[gift.id] === "claimed"}
                 isOwner={false}
                 onClaim={handleClaim}
@@ -193,7 +155,7 @@ export default function ViewPage() {
         )}
 
         <p className="text-center text-xs text-gray-400 pt-4">
-          made with GiftVault 🎁{" "}
+          Made with GiftVault 🎁{" "}
           <Link href="/" className="text-rose-deep font-semibold hover:underline">
             Make your own!
           </Link>

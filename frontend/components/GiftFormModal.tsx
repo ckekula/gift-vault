@@ -1,28 +1,23 @@
 "use client";
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
-import type { Gift, Tier } from "@/lib/crypto";
+import type { Gift, Group } from "@/lib/crypto";
 
 const EMOJIS = ["🎁","🧥","👟","📚","🎮","🎨","🍳","🌿","💻","📷","🎸","🕯️","🧴","🛋️","✈️","🍫"];
-const TIERS: { value: Tier; label: string }[] = [
-  { value: "family",  label: "family" },
-  { value: "friends", label: "friends" },
-  { value: "santa",   label: "secret santa" },
-  { value: "all",     label: "everyone" },
-];
 
 interface Props {
   initial?: Partial<Gift>;
+  groups: Group[];
   onSave: (gift: Omit<Gift, "id"> & { id?: string }) => void;
   onClose: () => void;
 }
 
-export function GiftFormModal({ initial, onSave, onClose }: Props) {
+export function GiftFormModal({ initial, groups, onSave, onClose }: Props) {
   const [name,  setName]  = useState(initial?.name  ?? "");
   const [price, setPrice] = useState(initial?.price ?? "");
   const [url,   setUrl]   = useState(initial?.url   ?? "");
   const [notes, setNotes] = useState(initial?.notes ?? "");
-  const [tier,  setTier]  = useState<Tier>(initial?.tier  ?? "all");
+  const [tier,  setTier]  = useState<string>(initial?.tier ?? "everyone");
   const [emoji, setEmoji] = useState(initial?.emoji ?? "🎁");
 
   useEffect(() => {
@@ -31,10 +26,10 @@ export function GiftFormModal({ initial, onSave, onClose }: Props) {
     return () => window.removeEventListener("keydown", handler);
   }, [onClose]);
 
-  const handleSave = () => {
-    if (!name.trim()) return;
-    onSave({ id: initial?.id, name: name.trim(), price, url, notes, tier, emoji });
-  };
+  const groupOptions = [
+    { id: "everyone", name: "everyone" },
+    ...groups,
+  ];
 
   return (
     <div
@@ -53,7 +48,6 @@ export function GiftFormModal({ initial, onSave, onClose }: Props) {
         </div>
 
         <div className="px-6 py-4 space-y-4">
-          {/* Emoji picker */}
           <div>
             <label className="block text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">Pick an emoji</label>
             <div className="flex flex-wrap gap-2">
@@ -93,11 +87,11 @@ export function GiftFormModal({ initial, onSave, onClose }: Props) {
               <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">Visible to</label>
               <select
                 value={tier}
-                onChange={(e) => setTier(e.target.value as Tier)}
+                onChange={(e) => setTier(e.target.value)}
                 className="w-full border border-cream-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-rose-mid focus:border-transparent"
               >
-                {TIERS.map((t) => (
-                  <option key={t.value} value={t.value}>{t.label}</option>
+                {groupOptions.map((g) => (
+                  <option key={g.id} value={g.id}>{g.name}</option>
                 ))}
               </select>
             </div>
@@ -129,10 +123,10 @@ export function GiftFormModal({ initial, onSave, onClose }: Props) {
             onClick={onClose}
             className="flex-1 py-2.5 rounded-xl border border-cream-200 text-sm font-semibold text-gray-500 hover:bg-gray-50 transition-all"
           >
-            cancel
+            Cancel
           </button>
           <button
-            onClick={handleSave}
+            onClick={() => onSave({ id: initial?.id, name: name.trim(), price, url, notes, tier, emoji })}
             disabled={!name.trim()}
             className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-40 cursor-pointer"
             style={{ background: "linear-gradient(135deg, #f4a4b5, #c45a76)" }}

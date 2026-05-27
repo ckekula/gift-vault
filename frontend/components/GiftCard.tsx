@@ -1,10 +1,11 @@
 "use client";
 import { ExternalLink, Trash2, Pencil } from "lucide-react";
-import type { Gift, Tier } from "@/lib/crypto";
+import type { Gift, Group } from "@/lib/crypto";
 import { TierBadge } from "./TierBadge";
 
 interface Props {
   gift: Gift;
+  groups: Group[];
   claimed?: boolean;
   isOwner?: boolean;
   onClaim?: (id: string, claim: boolean) => void;
@@ -12,32 +13,28 @@ interface Props {
   onDelete?: (id: string) => void;
 }
 
-const TIER_ACCENTS: Record<Tier, string> = {
-  family:  "border-l-4 border-l-[#f4a4b5]",
-  friends: "border-l-4 border-l-[#a89fe8]",
-  santa:   "border-l-4 border-l-[#ffb74d]",
-  all:     "border-l-4 border-l-[#7ecba0]",
-};
+const EVERYONE_GROUP: Group = { id: "everyone", name: "everyone", color: "#2d7a52" };
 
-export function GiftCard({ gift, claimed, isOwner, onClaim, onEdit, onDelete }: Props) {
+export function GiftCard({ gift, groups, claimed, isOwner, onClaim, onEdit, onDelete }: Props) {
+  const group =
+    gift.tier === "everyone"
+      ? EVERYONE_GROUP
+      : (groups.find((g) => g.id === gift.tier) ?? EVERYONE_GROUP);
+
   return (
     <div
-      className={`bg-white rounded-2xl border border-cream-200 p-4 flex items-start gap-3 transition-all hover:border-[#d4b896] ${TIER_ACCENTS[gift.tier]} ${claimed ? "opacity-60" : ""}`}
+      className={`bg-white rounded-2xl border border-cream-200 p-4 flex items-start gap-3 transition-all hover:border-[#d4b896] ${claimed ? "opacity-60" : ""}`}
+      style={{ borderLeft: `4px solid ${group.color}` }}
     >
       <div className="text-3xl shrink-0 mt-0.5 select-none">{gift.emoji}</div>
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
           <div>
             <p className="font-bold text-[15px] text-gray-800 leading-snug">{gift.name}</p>
-            {gift.price && (
-              <p className="text-sm text-gray-500 mt-0.5">{gift.price}</p>
-            )}
+            {gift.price && <p className="text-sm text-gray-500 mt-0.5">{gift.price}</p>}
           </div>
-          <TierBadge tier={gift.tier} />
         </div>
-        {gift.notes && (
-          <p className="text-sm text-gray-500 mt-1 italic">`&quot;`{gift.notes}`&quot;`</p>
-        )}
+        {gift.notes && <p className="text-sm text-gray-500 mt-1 italic">&apos;{gift.notes}&apos;</p>}
         <div className="flex items-center gap-2 mt-3">
           {gift.url && (
             <a
@@ -52,11 +49,12 @@ export function GiftCard({ gift, claimed, isOwner, onClaim, onEdit, onDelete }: 
           {!isOwner && onClaim && (
             <button
               onClick={() => onClaim(gift.id, !claimed)}
-              className={`ml-auto text-xs font-semibold px-3 py-1 rounded-full transition-all ${
+              className="ml-auto text-xs font-semibold px-3 py-1 rounded-full transition-all cursor-pointer"
+              style={
                 claimed
-                  ? "bg-sage-soft text-sage-deep border border-sage-mid"
-                  : "bg-rose-soft text-rose-deep border border-rose-mid hover:bg-[#f9d0d9]"
-              }`}
+                  ? { background: "#e8f5ee", color: "#2d7a52", border: "1px solid #7ecba0" }
+                  : { background: "#fde8ec", color: "#c45a76", border: "1px solid #f4a4b5" }
+              }
             >
               {claimed ? "✓ claimed" : "claim it"}
             </button>
