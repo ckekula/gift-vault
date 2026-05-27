@@ -10,7 +10,7 @@ import (
 	"os"
 	"time"
 
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/lib/pq"
 )
 
 func newID() string {
@@ -47,35 +47,35 @@ type ClaimRequest struct {
 
 // ── Database ──────────────────────────────────────────────────────────────────
 
-type DB struct {
-	db *sql.DB
-}
+type DB struct{ db *sql.DB }
 
 const schema = `
 CREATE TABLE IF NOT EXISTS lists (
 	id           TEXT PRIMARY KEY,
-	blobs        TEXT NOT NULL DEFAULT '{}',
-	key_handles  TEXT NOT NULL DEFAULT '{}',
-	claim_states TEXT NOT NULL DEFAULT '{}',
+	blobs        JSONB NOT NULL DEFAULT '{}',
+	key_handles  JSONB NOT NULL DEFAULT '{}',
+	claim_states JSONB NOT NULL DEFAULT '{}',
 	version      INTEGER NOT NULL DEFAULT 1,
-	created_at   DATETIME NOT NULL,
-	updated_at   DATETIME NOT NULL
+	created_at   TIMESTAMPTZ NOT NULL,
+	updated_at   TIMESTAMPTZ NOT NULL
 );
 `
 
-func openDB(path string) (*DB, error) {
-	db, err := sql.Open("sqlite3", path+"?_journal_mode=WAL&_foreign_keys=on")
+func openDB(connStr string) (*DB, error) {
+	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		return nil, err
 	}
-	db.SetMaxOpenConns(1) // SQLite is single-writer; WAL handles concurrent reads
+	if err := db.Ping(); err != nil {
+		return nil, err
+	}
 	if _, err := db.Exec(schema); err != nil {
 		return nil, err
 	}
+	log.Println("database connected and schema ready")
 	return &DB{db: db}, nil
 }
 
-// marshalMap encodes a map to JSON string for storage.
 func marshalMap(m map[string]string) string {
 	if m == nil {
 		return "{}"
@@ -84,23 +84,17 @@ func marshalMap(m map[string]string) string {
 	return string(b)
 }
 
-// unmarshalMap decodes a JSON string back to a map.
 func unmarshalMap(s string) map[string]string {
 	m := map[string]string{}
-	if s == "" {
-		return m
-	}
 	json.Unmarshal([]byte(s), &m)
 	return m
 }
 
-func (d *DB) scanList(row *sql.Row) (*ListResponse, error) {
-	var (
-		id, blobsJSON, keyHandlesJSON, claimStatesJSON string
-		version                                        int
-		createdAt, updatedAt                           time.Time
-	)
-	err := row.Scan(&id, &blobsJSON, &keyHandlesJSON, &claimStatesJSON, &version, &createdAt, &updatedAt)
+func (d *DB) scan(row *sql.Row) (*ListResponse, error) {
+	var id, blobsJSON, keyHandlesJSON, claimStatesJSON string
+	var version int
+	var updatedAt time.Time
+	err := row.Scan(&id, &blobsJSON, &keyHandlesJSON, &claimStatesJSON, &version, &updatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -117,23 +111,21 @@ func (d *DB) scanList(row *sql.Row) (*ListResponse, error) {
 func (d *DB) Create(req CreateListRequest) (*ListResponse, error) {
 	id := newID()
 	now := time.Now().UTC()
-	_, err := d.db.Exec(
+	row := d.db.QueryRow(
 		`INSERT INTO lists (id, blobs, key_handles, claim_states, version, created_at, updated_at)
-		 VALUES (?, ?, ?, '{}', 1, ?, ?)`,
-		id, marshalMap(req.Blobs), marshalMap(req.KeyHandles), now, now,
+		 VALUES ($1, $2, $3, '{}', 1, $4, $4)
+		 RETURNING id, blobs::text, key_handles::text, claim_states::text, version, updated_at`,
+		id, marshalMap(req.Blobs), marshalMap(req.KeyHandles), now,
 	)
-	if err != nil {
-		return nil, err
-	}
-	return d.Get(id)
+	return d.scan(row)
 }
 
 func (d *DB) Get(id string) (*ListResponse, error) {
 	row := d.db.QueryRow(
-		`SELECT id, blobs, key_handles, claim_states, version, created_at, updated_at
-		 FROM lists WHERE id = ?`, id,
+		`SELECT id, blobs::text, key_handles::text, claim_states::text, version, updated_at
+		 FROM lists WHERE id = $1`, id,
 	)
-	rec, err := d.scanList(row)
+	rec, err := d.scan(row)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -141,60 +133,50 @@ func (d *DB) Get(id string) (*ListResponse, error) {
 }
 
 func (d *DB) Update(id string, req UpdateListRequest) (*ListResponse, error) {
-	now := time.Now().UTC()
-	res, err := d.db.Exec(
+	row := d.db.QueryRow(
 		`UPDATE lists
-		 SET blobs = ?, key_handles = ?, version = version + 1, updated_at = ?
-		 WHERE id = ?`,
-		marshalMap(req.Blobs), marshalMap(req.KeyHandles), now, id,
+		 SET blobs = $2, key_handles = $3, version = version + 1, updated_at = $4
+		 WHERE id = $1
+		 RETURNING id, blobs::text, key_handles::text, claim_states::text, version, updated_at`,
+		id, marshalMap(req.Blobs), marshalMap(req.KeyHandles), time.Now().UTC(),
 	)
-	if err != nil {
-		return nil, err
-	}
-	if n, _ := res.RowsAffected(); n == 0 {
-		return nil, nil
-	}
-	return d.Get(id)
-}
-
-func (d *DB) Claim(id string, req ClaimRequest) (*ListResponse, error) {
-	// Read current claim_states, mutate, write back — all in a transaction.
-	tx, err := d.db.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer tx.Rollback()
-
-	var claimStatesJSON string
-	err = tx.QueryRow(`SELECT claim_states FROM lists WHERE id = ?`, id).Scan(&claimStatesJSON)
+	rec, err := d.scan(row)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
-	if err != nil {
-		return nil, err
-	}
-
-	states := unmarshalMap(claimStatesJSON)
-	if req.Claim {
-		states[req.GiftID] = "claimed"
-	} else {
-		delete(states, req.GiftID)
-	}
-
-	_, err = tx.Exec(
-		`UPDATE lists SET claim_states = ?, updated_at = ? WHERE id = ?`,
-		marshalMap(states), time.Now().UTC(), id,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if err := tx.Commit(); err != nil {
-		return nil, err
-	}
-	return d.Get(id)
+	return rec, err
 }
 
-// ── HTTP handlers ─────────────────────────────────────────────────────────────
+func (d *DB) Claim(id string, req ClaimRequest) (*ListResponse, error) {
+	// Use Postgres JSONB operators to set/delete a key atomically — no transaction needed
+	var row *sql.Row
+	if req.Claim {
+		row = d.db.QueryRow(
+			`UPDATE lists
+			 SET claim_states = claim_states || jsonb_build_object($2::text, 'claimed'::text),
+			     updated_at = $3
+			 WHERE id = $1
+			 RETURNING id, blobs::text, key_handles::text, claim_states::text, version, updated_at`,
+			id, req.GiftID, time.Now().UTC(),
+		)
+	} else {
+		row = d.db.QueryRow(
+			`UPDATE lists
+			 SET claim_states = claim_states - $2,
+			     updated_at = $3
+			 WHERE id = $1
+			 RETURNING id, blobs::text, key_handles::text, claim_states::text, version, updated_at`,
+			id, req.GiftID, time.Now().UTC(),
+		)
+	}
+	rec, err := d.scan(row)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	return rec, err
+}
+
+// ── HTTP ──────────────────────────────────────────────────────────────────────
 
 func cors(next http.Handler) http.Handler {
 	allowed := os.Getenv("ALLOWED_ORIGIN")
@@ -212,7 +194,6 @@ func cors(next http.Handler) http.Handler {
 		w.Header().Set("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 		w.Header().Set("Referrer-Policy", "no-referrer")
-		// Respond to preflight immediately — before any routing or redirects
 		if r.Method == http.MethodOptions {
 			w.Header().Set("Access-Control-Max-Age", "86400")
 			w.WriteHeader(http.StatusNoContent)
@@ -231,7 +212,6 @@ func jsonResp(w http.ResponseWriter, code int, v any) {
 func makeHandler(store *DB) http.Handler {
 	mux := http.NewServeMux()
 
-	// POST /lists — create
 	mux.HandleFunc("POST /lists", func(w http.ResponseWriter, r *http.Request) {
 		var req CreateListRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -240,18 +220,17 @@ func makeHandler(store *DB) http.Handler {
 		}
 		rec, err := store.Create(req)
 		if err != nil {
-			log.Printf("create error: %v", err)
+			log.Printf("create: %v", err)
 			jsonResp(w, 500, map[string]string{"error": "internal error"})
 			return
 		}
 		jsonResp(w, 201, rec)
 	})
 
-	// GET /lists/{id} — fetch
 	mux.HandleFunc("GET /lists/{id}", func(w http.ResponseWriter, r *http.Request) {
 		rec, err := store.Get(r.PathValue("id"))
 		if err != nil {
-			log.Printf("get error: %v", err)
+			log.Printf("get: %v", err)
 			jsonResp(w, 500, map[string]string{"error": "internal error"})
 			return
 		}
@@ -262,7 +241,6 @@ func makeHandler(store *DB) http.Handler {
 		jsonResp(w, 200, rec)
 	})
 
-	// PUT /lists/{id} — update blobs
 	mux.HandleFunc("PUT /lists/{id}", func(w http.ResponseWriter, r *http.Request) {
 		var req UpdateListRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -271,7 +249,7 @@ func makeHandler(store *DB) http.Handler {
 		}
 		rec, err := store.Update(r.PathValue("id"), req)
 		if err != nil {
-			log.Printf("update error: %v", err)
+			log.Printf("update: %v", err)
 			jsonResp(w, 500, map[string]string{"error": "internal error"})
 			return
 		}
@@ -282,7 +260,6 @@ func makeHandler(store *DB) http.Handler {
 		jsonResp(w, 200, rec)
 	})
 
-	// POST /lists/{id}/claim — toggle claim state
 	mux.HandleFunc("POST /lists/{id}/claim", func(w http.ResponseWriter, r *http.Request) {
 		var req ClaimRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -291,7 +268,7 @@ func makeHandler(store *DB) http.Handler {
 		}
 		rec, err := store.Claim(r.PathValue("id"), req)
 		if err != nil {
-			log.Printf("claim error: %v", err)
+			log.Printf("claim: %v", err)
 			jsonResp(w, 500, map[string]string{"error": "internal error"})
 			return
 		}
@@ -302,7 +279,6 @@ func makeHandler(store *DB) http.Handler {
 		jsonResp(w, 200, rec)
 	})
 
-	// GET /health
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
 		jsonResp(w, 200, map[string]string{"status": "ok"})
 	})
@@ -313,16 +289,15 @@ func makeHandler(store *DB) http.Handler {
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 func main() {
-	dbPath := os.Getenv("DB_PATH")
-	if dbPath == "" {
-		dbPath = "giftvault.db"
+	connStr := os.Getenv("DATABASE_URL")
+	if connStr == "" {
+		log.Fatal("DATABASE_URL environment variable is required")
 	}
 
-	store, err := openDB(dbPath)
+	store, err := openDB(connStr)
 	if err != nil {
 		log.Fatalf("failed to open database: %v", err)
 	}
-	log.Printf("database: %s", dbPath)
 
 	port := os.Getenv("PORT")
 	if port == "" {
