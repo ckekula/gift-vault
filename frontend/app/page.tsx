@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ShieldCheck, Gift, Lock, Users, Sparkles } from "lucide-react";
+import { Gift } from "lucide-react";
 import { generateMasterKey, masterKeyToFragment } from "@/lib/crypto";
 import { api } from "@/lib/api";
 
@@ -29,8 +29,8 @@ export default function HomePage() {
   return (
     <main className="min-h-screen flex flex-col items-center justify-center px-4 py-16">
       {/* Hero */}
-      <div className="text-center max-w-lg mb-12">
-        <div className="text-6xl mb-4">🎁</div>
+      <div className="text-center max-w-lg mb-6">
+        <div className="text-6xl">🎁</div>
         <h1 className="text-4xl font-extrabold text-gray-900 mb-3 text-balance">
           Your wishlist,<br />
           <span style={{ color: "#c45a76" }}>Privately shared</span>
@@ -41,25 +41,6 @@ export default function HomePage() {
         </p>
       </div>
 
-      {/* Feature pills */}
-      <div className="flex flex-wrap gap-2 justify-center mb-10">
-        {[
-          { icon: <Lock size={13} />,    text: "end-to-end encrypted",    bg: "#e8f4fd", color: "#1e40af" },
-          { icon: <Users size={13} />,   text: "per-group access control", bg: "#fde8ec", color: "#c45a76" },
-          { icon: <ShieldCheck size={13} />, text: "server sees only ciphertext", bg: "#e8f5ee", color: "#2d7a52" },
-          { icon: <Sparkles size={13} />, text: "long-lived links",        bg: "#eeeafd", color: "#5a4fbf" },
-        ].map((f) => (
-          <span
-            key={f.text}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
-            style={{ background: f.bg, color: f.color }}
-          >
-            {f.icon}
-            {f.text}
-          </span>
-        ))}
-      </div>
-
       {/* CTA */}
       <button
         onClick={createList}
@@ -67,19 +48,19 @@ export default function HomePage() {
         className="relative px-10 py-4 rounded-2xl text-white font-extrabold text-lg transition-all active:scale-95 disabled:opacity-60 cursor-pointer"
         style={{ background: "#c45a76" }}
       >
-        {loading ? "creating your vault…" : "Create my Wishlist"}
+        {loading ? "Creating…" : "Create my Wishlist"}
       </button>
 
-      <p className="text-xs text-gray-400 mt-4 max-w-xs text-center">
-        No account needed. Your encryption key lives in the link — keep it safe.
+      <p className="text-sm text-gray-600 mt-4 max-w-xs text-center">
+        No signup required!
       </p>
 
       {/* How it works */}
-      <div className="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-2xl w-full">
+      <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-2xl w-full">
         {[
-          { emoji: "🔑", title: "key in the link", desc: "The decryption key lives in the # fragment of your URL — browsers never send this to servers." },
-          { emoji: "👥", title: "pick who sees what", desc: "Family, friends, or secret santa — each group gets their own link showing only their gifts." },
-          { emoji: "✏️", title: "edit any time", desc: "Update your list freely. Existing links keep working — no need to re-share." },
+          { emoji: "🔑", title: "The link is the key", desc: "All your wishlist information lives inside the URL. Keep it safe!" },
+          { emoji: "👥", title: "Pick who sees what", desc: "Family, friends, or secret santa; each group gets their own link showing only their gifts." },
+          { emoji: "✏️", title: "Edit any time", desc: "Update your list freely. Existing links keep working. No need to re-share." },
         ].map((step) => (
           <div key={step.title} className="card-cozy text-center">
             <div className="text-3xl mb-3">{step.emoji}</div>
@@ -96,8 +77,8 @@ export default function HomePage() {
       >
         <Gift size={16} className="shrink-0 mt-0.5" style={{ color: "var(--color-sec-icon)" }} />
         <div>
-          <strong>Zero-knowledge:</strong> we store encrypted blobs only. Even if our servers were breached,
-          your gift names and prices remain private.
+          <strong>Zero-knowledge:</strong> We store encrypted blobs only. Even if our servers were breached,
+          your wishlist remains private.
         </div>
       </div>
     </main>

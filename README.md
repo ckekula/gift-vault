@@ -45,7 +45,7 @@ Owner re-encrypts with same tier keys → pushes new blobs → same list ID → 
 
 ## Security properties
 
-✅ Server stores only ciphertext — gift names/prices never sent in plaintext  
+✅ Server stores only ciphertext. Gift names/prices never sent in plaintext  
 ✅ URL fragment is never sent in HTTP requests (browser spec)  
 ✅ AES-GCM 256 with random 96-bit nonces per encryption  
 ✅ HKDF key derivation separates tier access  
