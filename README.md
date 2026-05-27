@@ -1,4 +1,4 @@
-# GiftVault 🎁
+# GiftVault
 
 A zero-knowledge encrypted gift registry. Your gift names and prices are encrypted in the browser before ever reaching the server. Only people you share a link with can read your list.
 
@@ -8,16 +8,14 @@ A zero-knowledge encrypted gift registry. Your gift names and prices are encrypt
 ```bash
 cd backend
 go build -o giftvault .
-./giftvault          # listens on :8080
-# or: PORT=9000 ./giftvault
+./giftvault
 ```
 
 ### Frontend (Next.js)
 ```bash
 cd frontend
 npm install
-cp .env.local.example .env.local   # edit API URL if needed
-npm run dev          # http://localhost:3000
+npm run dev
 ```
 
 ## Architecture

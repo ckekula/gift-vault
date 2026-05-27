@@ -37,7 +37,8 @@ export async function masterKeyToFragment(key: CryptoKey): Promise<string> {
 }
 
 export async function masterKeyFromFragment(fragment: string): Promise<CryptoKey> {
-  return crypto.subtle.importKey("raw", fromb64url(fragment), { name: "AES-GCM" }, false, ["encrypt", "decrypt"]);
+  // Must be extractable so deriveTierKey can re-import as HKDF
+  return crypto.subtle.importKey("raw", fromb64url(fragment), { name: "AES-GCM" }, true, ["encrypt", "decrypt"]);
 }
 
 async function deriveTierKey(masterKey: CryptoKey, tier: Tier): Promise<CryptoKey> {

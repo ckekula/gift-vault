@@ -22,9 +22,9 @@ const TIER_ACCENTS: Record<Tier, string> = {
 export function GiftCard({ gift, claimed, isOwner, onClaim, onEdit, onDelete }: Props) {
   return (
     <div
-      className={`bg-white rounded-2xl border border-[#ede0cc] p-4 flex items-start gap-3 transition-all hover:border-[#d4b896] ${TIER_ACCENTS[gift.tier]} ${claimed ? "opacity-60" : ""}`}
+      className={`bg-white rounded-2xl border border-cream-200 p-4 flex items-start gap-3 transition-all hover:border-[#d4b896] ${TIER_ACCENTS[gift.tier]} ${claimed ? "opacity-60" : ""}`}
     >
-      <div className="text-3xl flex-shrink-0 mt-0.5 select-none">{gift.emoji}</div>
+      <div className="text-3xl shrink-0 mt-0.5 select-none">{gift.emoji}</div>
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
           <div>
@@ -36,7 +36,7 @@ export function GiftCard({ gift, claimed, isOwner, onClaim, onEdit, onDelete }: 
           <TierBadge tier={gift.tier} />
         </div>
         {gift.notes && (
-          <p className="text-sm text-gray-500 mt-1 italic">"{gift.notes}"</p>
+          <p className="text-sm text-gray-500 mt-1 italic">`&quot;`{gift.notes}`&quot;`</p>
         )}
         <div className="flex items-center gap-2 mt-3">
           {gift.url && (
@@ -54,8 +54,8 @@ export function GiftCard({ gift, claimed, isOwner, onClaim, onEdit, onDelete }: 
               onClick={() => onClaim(gift.id, !claimed)}
               className={`ml-auto text-xs font-semibold px-3 py-1 rounded-full transition-all ${
                 claimed
-                  ? "bg-[#e8f5ee] text-[#2d7a52] border border-[#7ecba0]"
-                  : "bg-[#fde8ec] text-[#c45a76] border border-[#f4a4b5] hover:bg-[#f9d0d9]"
+                  ? "bg-sage-soft text-sage-deep border border-sage-mid"
+                  : "bg-rose-soft text-rose-deep border border-rose-mid hover:bg-[#f9d0d9]"
               }`}
             >
               {claimed ? "✓ claimed" : "claim it"}

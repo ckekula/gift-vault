@@ -43,7 +43,36 @@ export default function ViewPage() {
     }
   };
 
-  useEffect(() => { loadList(); }, [id, tier]);
+  useEffect(() => {
+    let cancelled = false;
+
+    const run = async () => {
+      setError(null);
+      try {
+        const fragment = window.location.hash.slice(1);
+        if (!fragment) throw new Error("no key in URL");
+
+        const listData = await api.getList(id);
+        const blob = listData.blobs?.[tier];
+        if (!blob) throw new Error("no data for this access level");
+
+        const decrypted = await decryptAsViewer(fragment, blob);
+        if (cancelled) return;
+        setGifts(decrypted);
+        setClaimStates(listData.claim_states || {});
+        setUpdatedAt(listData.updated_at);
+      } catch (err) {
+        if (cancelled) return;
+        console.error(err);
+        setError("couldn't decrypt this list — is the link correct?");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    run();
+    return () => { cancelled = true; };
+  }, [id, tier]);
 
   const handleClaim = async (giftId: string, claim: boolean) => {
     try {
@@ -96,7 +125,7 @@ export default function ViewPage() {
     <div className="min-h-screen" style={{ background: "var(--color-cream-50)" }}>
       {/* Header */}
       <header
-        className="sticky top-0 z-40 border-b border-[#ede0cc]"
+        className="sticky top-0 z-40 border-b border-cream-200"
         style={{ background: "rgba(253,249,244,0.95)", backdropFilter: "blur(12px)" }}
       >
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
@@ -121,7 +150,7 @@ export default function ViewPage() {
             <SecurityBadge label="decrypted locally" />
             <button
               onClick={loadList}
-              className="p-1.5 rounded-xl hover:bg-[#ede0cc] text-gray-400 transition-all"
+              className="p-1.5 rounded-xl hover:bg-cream-200 text-gray-400 transition-all"
               title="refresh"
             >
               <RefreshCw size={14} />
@@ -136,7 +165,7 @@ export default function ViewPage() {
           className="rounded-2xl p-3 flex items-start gap-2 text-xs"
           style={{ background: "var(--color-sec-bg)", border: "1px solid var(--color-sec-border)", color: "var(--color-sec-text)" }}
         >
-          <ShieldCheck size={13} className="flex-shrink-0 mt-0.5" style={{ color: "var(--color-sec-icon)" }} />
+          <ShieldCheck size={13} className="shrink-0 mt-0.5" style={{ color: "var(--color-sec-icon)" }} />
           <span>
             This list was decrypted entirely in your browser using the key in the URL.
             The server only provided encrypted data it cannot read.
@@ -166,7 +195,7 @@ export default function ViewPage() {
 
         <p className="text-center text-xs text-gray-400 pt-4">
           made with 🎁{" "}
-          <Link href="/" className="text-[#c45a76] font-semibold hover:underline">
+          <Link href="/" className="text-rose-deep font-semibold hover:underline">
             make your own GiftVault
           </Link>
         </p>

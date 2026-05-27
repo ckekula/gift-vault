@@ -32,8 +32,8 @@ export default function HomePage() {
       <div className="text-center max-w-lg mb-12">
         <div className="text-6xl mb-4">🎁</div>
         <h1 className="text-4xl font-extrabold text-gray-900 mb-3 text-balance">
-          your wishlist,<br />
-          <span style={{ color: "#c45a76" }}>privately shared</span>
+          Your wishlist,<br />
+          <span style={{ color: "#c45a76" }}>Privately shared</span>
         </h1>
         <p className="text-gray-500 text-lg leading-relaxed">
           GiftVault encrypts your wishlist in the browser before it ever leaves your device.
@@ -67,7 +67,7 @@ export default function HomePage() {
         className="relative px-10 py-4 rounded-2xl text-white font-extrabold text-lg transition-all active:scale-95 disabled:opacity-60 cursor-pointer"
         style={{ background: "#c45a76" }}
       >
-        {loading ? "creating your vault…" : "✨ create my wishlist"}
+        {loading ? "creating your vault…" : "Create my Wishlist"}
       </button>
 
       <p className="text-xs text-gray-400 mt-4 max-w-xs text-center">
@@ -94,7 +94,7 @@ export default function HomePage() {
         className="mt-8 max-w-md w-full rounded-2xl p-4 flex items-start gap-3 text-sm"
         style={{ background: "var(--color-sec-bg)", border: "1px solid var(--color-sec-border)", color: "var(--color-sec-text)" }}
       >
-        <Gift size={16} className="flex-shrink-0 mt-0.5" style={{ color: "var(--color-sec-icon)" }} />
+        <Gift size={16} className="shrink-0 mt-0.5" style={{ color: "var(--color-sec-icon)" }} />
         <div>
           <strong>Zero-knowledge:</strong> we store encrypted blobs only. Even if our servers were breached,
           your gift names and prices remain private.

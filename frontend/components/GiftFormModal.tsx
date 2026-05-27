@@ -43,9 +43,9 @@ export function GiftFormModal({ initial, onSave, onClose }: Props) {
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden">
-        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-[#ede0cc]">
+        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-cream-200">
           <h2 className="text-lg font-bold text-gray-800">
-            {initial?.id ? "Edit gift" : "Add a gift ✨"}
+            {initial?.id ? "Edit Gift" : "Add a Gift"}
           </h2>
           <button onClick={onClose} className="p-1.5 rounded-xl hover:bg-gray-100 text-gray-400">
             <X size={16} />
@@ -61,7 +61,7 @@ export function GiftFormModal({ initial, onSave, onClose }: Props) {
                 <button
                   key={e}
                   onClick={() => setEmoji(e)}
-                  className={`text-xl p-1.5 rounded-xl transition-all ${emoji === e ? "bg-[#fde8ec] ring-2 ring-[#f4a4b5] scale-110" : "hover:bg-gray-100"}`}
+                  className={`text-xl p-1.5 rounded-xl transition-all ${emoji === e ? "bg-rose-soft ring-2 ring-rose-mid scale-110" : "hover:bg-gray-100"}`}
                 >
                   {e}
                 </button>
@@ -75,7 +75,7 @@ export function GiftFormModal({ initial, onSave, onClose }: Props) {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Patagonia fleece jacket"
-              className="w-full border border-[#ede0cc] rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#f4a4b5] focus:border-transparent"
+              className="w-full border border-cream-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-rose-mid focus:border-transparent"
             />
           </div>
 
@@ -86,7 +86,7 @@ export function GiftFormModal({ initial, onSave, onClose }: Props) {
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
                 placeholder="~$120"
-                className="w-full border border-[#ede0cc] rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#f4a4b5] focus:border-transparent"
+                className="w-full border border-cream-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-rose-mid focus:border-transparent"
               />
             </div>
             <div>
@@ -94,7 +94,7 @@ export function GiftFormModal({ initial, onSave, onClose }: Props) {
               <select
                 value={tier}
                 onChange={(e) => setTier(e.target.value as Tier)}
-                className="w-full border border-[#ede0cc] rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#f4a4b5] focus:border-transparent"
+                className="w-full border border-cream-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-rose-mid focus:border-transparent"
               >
                 {TIERS.map((t) => (
                   <option key={t.value} value={t.value}>{t.label}</option>
@@ -109,7 +109,7 @@ export function GiftFormModal({ initial, onSave, onClose }: Props) {
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               placeholder="https://..."
-              className="w-full border border-[#ede0cc] rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#f4a4b5] focus:border-transparent"
+              className="w-full border border-cream-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-rose-mid focus:border-transparent"
             />
           </div>
 
@@ -119,7 +119,7 @@ export function GiftFormModal({ initial, onSave, onClose }: Props) {
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="size, color, any details..."
-              className="w-full border border-[#ede0cc] rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#f4a4b5] focus:border-transparent"
+              className="w-full border border-cream-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-rose-mid focus:border-transparent"
             />
           </div>
         </div>
@@ -127,17 +127,17 @@ export function GiftFormModal({ initial, onSave, onClose }: Props) {
         <div className="px-6 pb-6 flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 py-2.5 rounded-xl border border-[#ede0cc] text-sm font-semibold text-gray-500 hover:bg-gray-50 transition-all"
+            className="flex-1 py-2.5 rounded-xl border border-cream-200 text-sm font-semibold text-gray-500 hover:bg-gray-50 transition-all"
           >
             cancel
           </button>
           <button
             onClick={handleSave}
             disabled={!name.trim()}
-            className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-40"
+            className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-40 cursor-pointer"
             style={{ background: "linear-gradient(135deg, #f4a4b5, #c45a76)" }}
           >
-            {initial?.id ? "save changes" : "add gift 🎁"}
+            {initial?.id ? "Save Changes" : "Add Gift"}
           </button>
         </div>
       </div>
