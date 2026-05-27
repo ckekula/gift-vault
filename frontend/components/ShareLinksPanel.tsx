@@ -28,8 +28,8 @@ export function ShareLinksPanel({ links }: { links: ShareLink[] }) {
       >
         <ShieldCheck size={14} className="shrink-0 mt-0.5" style={{ color: "var(--color-sec-icon)" }} />
         <span>
-          <strong>The link IS the key.</strong> The part after # never reaches the server.
-          Sharing this link = granting access. Treat it like a password.
+          <strong>The link IS the key.</strong>
+          <span> </span>Don&apos;t share it with anyone you don&apos;t trust. Treat it like a password.
         </span>
       </div>
 

@@ -158,7 +158,15 @@ export default function ManagePage() {
   const buildShareLinksForGroups = async () => {
     if (!masterKey) return;
     const origin = window.location.origin;
-    const links: ShareLink[] = await Promise.all(
+    const everyoneLink: ShareLink = {
+      groupId: "everyone",
+      label: "everyone",
+      url: await buildShareUrl(origin, id, masterKey, EVERYONE),
+      accent: EVERYONE.color,
+      bg: "#e8f5ee",
+      border: "#7ecba0",
+    };
+    const groupLinks: ShareLink[] = await Promise.all(
       groups.map(async (group, i) => {
         const c = pickColor(i);
         return {
@@ -171,7 +179,7 @@ export default function ManagePage() {
         };
       })
     );
-    setShareLinks(links);
+    setShareLinks([everyoneLink, ...groupLinks]);
     setShowShare(true);
   };
  
@@ -213,7 +221,7 @@ export default function ManagePage() {
             <SecurityBadge />
             <button
               onClick={buildShareLinksForGroups}
-              disabled={groups.length === 0}
+              disabled={gifts.length === 0}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-bold text-white transition-all active:scale-95 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
               style={{ background: "#5a4fbf" }}
               title={groups.length === 0 ? "create a group first" : "share your list"}
@@ -254,6 +262,10 @@ export default function ManagePage() {
           {/* Everyone pill (non-deletable) */}
           <div className="flex items-center gap-2 mb-2">
             <TierBadge name="everyone" color={EVERYONE.color} bg="#e8f5ee" border="#7ecba0" />
+            <span className="text-xs text-gray-400">
+              {gifts.filter((g) => g.tier === "everyone").length} gift
+              {gifts.filter((g) => g.tier === "everyone").length !== 1 ? "s" : ""}
+            </span>
           </div>
  
           {/* Custom groups */}
